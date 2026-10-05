@@ -4,10 +4,9 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
-  <meta name="mobile-web-app-capable" content="yes" />
   <meta name="theme-color" content="#1a1c2c" />
   <title>Sprout Hearts – Conoce a tu pareja</title>
-  <link rel="stylesheet" href="css/style.css" />
+  <link rel="stylesheet" href="css/style.css?v=3" />
   <script src="https://cdn.jsdelivr.net/npm/phaser@3.80.1/dist/phaser.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
@@ -17,6 +16,7 @@
       <div class="pixel-box">
         <h1 class="title">🌱 Sprout Hearts</h1>
         <p class="subtitle">Un juego para conocerse más</p>
+        <p class="howto">1. Crea o únete con un PIN<br>2. Camina hacia los ♥ del mapa<br>3. Responde y lee a tu pareja</p>
         <div class="btn-group">
           <button id="btn-create" class="pixel-btn">Crear sala</button>
           <button id="btn-join" class="pixel-btn">Unirse con PIN</button>
@@ -25,76 +25,77 @@
           <p>Tu PIN es:</p>
           <div id="generated-pin" class="pin-display">------</div>
           <p class="hint">Comparte este PIN con tu pareja</p>
-          <button id="btn-start-create" class="pixel-btn">Entrar al mapa</button>
+          <button id="btn-start-create" class="pixel-btn">Elegir avatar</button>
         </div>
         <div id="pin-join" class="hidden">
           <p>Ingresa el PIN de 6 dígitos:</p>
           <input type="text" id="input-pin" maxlength="6" inputmode="numeric" pattern="[0-9]*" placeholder="123456" class="pixel-input" autocomplete="off" />
-          <button id="btn-join-confirm" class="pixel-btn">Unirse</button>
+          <button id="btn-join-confirm" class="pixel-btn">Continuar</button>
         </div>
       </div>
     </div>
 
     <div id="screen-customize" class="screen">
       <div class="pixel-box">
-        <h2 style="font-size:0.85rem;margin-bottom:14px;color:#ff8fab;">Tu avatar</h2>
-        <div id="avatar-preview-box" style="display:flex;flex-wrap:wrap;justify-content:center;gap:10px;margin-bottom:14px;">
-          <div class="avatar-option selected" data-avatar="lpc">
+        <h2 style="font-size:0.8rem;margin-bottom:12px;color:#ff8fab;">Tu avatar</h2>
+        <div id="avatar-preview-box" style="display:flex;flex-wrap:wrap;justify-content:center;gap:8px;margin-bottom:12px;">
+          <div class="avatar-option selected" data-avatar="male-blue">
             <div class="avatar-swatch" style="background:#4a90d9;"></div>
-            <span style="font-size:0.4rem;">Azul</span>
+            <span style="font-size:0.38rem;">♂ Azul</span>
           </div>
-          <div class="avatar-option" data-avatar="partner">
-            <div class="avatar-swatch" style="background:#e85d75;"></div>
-            <span style="font-size:0.4rem;">Rosa</span>
-          </div>
-          <div class="avatar-option" data-avatar="green">
+          <div class="avatar-option" data-avatar="male-green">
             <div class="avatar-swatch" style="background:#3d9b5f;"></div>
-            <span style="font-size:0.4rem;">Verde</span>
+            <span style="font-size:0.38rem;">♂ Verde</span>
           </div>
-          <div class="avatar-option" data-avatar="purple">
-            <div class="avatar-swatch" style="background:#9b59b6;"></div>
-            <span style="font-size:0.4rem;">Morado</span>
-          </div>
-          <div class="avatar-option" data-avatar="orange">
-            <div class="avatar-swatch" style="background:#e67e22;"></div>
-            <span style="font-size:0.4rem;">Naranja</span>
-          </div>
-          <div class="avatar-option" data-avatar="teal">
-            <div class="avatar-swatch" style="background:#1abc9c;"></div>
-            <span style="font-size:0.4rem;">Turquesa</span>
-          </div>
-          <div class="avatar-option" data-avatar="red">
-            <div class="avatar-swatch" style="background:#c0392b;"></div>
-            <span style="font-size:0.4rem;">Rojo</span>
-          </div>
-          <div class="avatar-option" data-avatar="gold">
+          <div class="avatar-option" data-avatar="male-gold">
             <div class="avatar-swatch" style="background:#f1c40f;"></div>
-            <span style="font-size:0.4rem;">Dorado</span>
+            <span style="font-size:0.38rem;">♂ Dorado</span>
+          </div>
+          <div class="avatar-option" data-avatar="male-pink">
+            <div class="avatar-swatch" style="background:#e91e8c;"></div>
+            <span style="font-size:0.38rem;">♂ Rosa</span>
+          </div>
+          <div class="avatar-option" data-avatar="female-pink">
+            <div class="avatar-swatch" style="background:#ff8fab;"></div>
+            <span style="font-size:0.38rem;">♀ Rosa</span>
+          </div>
+          <div class="avatar-option" data-avatar="female-blue">
+            <div class="avatar-swatch" style="background:#90c0ff;"></div>
+            <span style="font-size:0.38rem;">♀ Azul</span>
+          </div>
+          <div class="avatar-option" data-avatar="female-green">
+            <div class="avatar-swatch" style="background:#90e090;"></div>
+            <span style="font-size:0.38rem;">♀ Verde</span>
           </div>
           <div class="avatar-option" data-avatar="sprout">
             <div class="avatar-swatch" style="background:#7bc74d;"></div>
-            <span style="font-size:0.4rem;">Granja</span>
+            <span style="font-size:0.38rem;">Granja</span>
           </div>
         </div>
         <label style="font-size:0.5rem;display:block;margin-bottom:4px;">Nombre</label>
         <input type="text" id="player-name" maxlength="12" class="pixel-input" value="Jugador" />
-        <button id="btn-ready" class="pixel-btn">¡Listo!</button>
+        <button id="btn-ready" class="pixel-btn">¡Entrar al mapa!</button>
       </div>
     </div>
 
     <div id="hud" class="hidden">
       <div class="hud-top">
-        <span id="hud-level">Nivel 1</span>
-        <span id="hud-partner">Esperando pareja...</span>
+        <span id="hud-level">Nivel 1 / 22</span>
+        <span id="hud-partner">Esperando pareja…</span>
         <span id="hud-pin"></span>
         <button id="sound-toggle" class="pixel-btn sound-btn">🔊</button>
+      </div>
+      <div id="tutorial-tip" class="tutorial-tip hidden">
+        Camina con el D-pad o flechas hasta un <strong>♥</strong>.
+        Pulsa el botón <strong>♥</strong> o Espacio para abrir la pregunta.
+        Responde y espera la respuesta de tu pareja.
       </div>
       <div id="question-panel" class="hidden">
         <div class="pixel-box question-box">
           <h3 id="q-title"></h3>
           <p id="q-book" class="book-ref"></p>
           <p id="q-text"></p>
-          <textarea id="q-answer" rows="3" placeholder="Escribe tu respuesta..." class="pixel-input"></textarea>
+          <textarea id="q-answer" rows="4" placeholder="Escribe tu respuesta aquí…" class="pixel-input"></textarea>
           <div class="btn-row">
             <button id="btn-submit-answer" class="pixel-btn">Enviar</button>
             <button id="btn-close-q" class="pixel-btn secondary">Cerrar</button>
@@ -120,6 +121,6 @@
   </div>
 
   <div id="game-container"></div>
-  <script type="module" src="js/main.js"></script>
+  <script type="module" src="js/main.js?v=3"></script>
 </body>
 </html>

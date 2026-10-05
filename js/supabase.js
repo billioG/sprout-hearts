@@ -7,8 +7,8 @@ export function generatePin() {
   return Math.floor(100000 + Math.random() * 900000).toString();
 }
 
-export async function createRoom(playerId, playerName, avatar) {
-  const pin = generatePin();
+export async function createRoom(playerId, playerName, avatar, preferredPin) {
+  const pin = preferredPin || generatePin();
   const payload = {
     pin,
     player1_id: playerId,

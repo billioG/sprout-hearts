@@ -430,3 +430,69 @@ body.question-open #mobile-controls {
   border-radius: 3px;
   pointer-events: none;
 }
+
+.howto {
+  font-size: clamp(0.45rem, 2vw, 0.55rem);
+  line-height: 1.7;
+  color: #b0b0c0;
+  margin-bottom: 18px;
+  text-align: left;
+}
+
+.tutorial-tip {
+  position: absolute;
+  top: 52px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: min(340px, 92vw);
+  background: rgba(26, 28, 44, 0.95);
+  border: 3px solid #ff8fab;
+  border-radius: 8px;
+  padding: 12px 14px;
+  font-size: clamp(0.5rem, 2.2vw, 0.6rem);
+  line-height: 1.65;
+  color: #f4f4f4;
+  z-index: 80;
+  pointer-events: none;
+  text-align: center;
+}
+
+#question-panel {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  padding: 8px;
+  padding-bottom: max(12px, env(safe-area-inset-bottom));
+  pointer-events: auto;
+  z-index: 70;
+  max-height: 70vh;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.question-box {
+  text-align: left;
+  max-width: 520px;
+  margin: 0 auto;
+  max-height: none;
+}
+
+#q-text {
+  font-size: clamp(0.55rem, 2.6vw, 0.7rem) !important;
+  line-height: 1.7 !important;
+  margin-bottom: 12px !important;
+  color: #f4f4f4;
+  word-break: break-word;
+}
+
+#q-answer {
+  min-height: 80px !important;
+  font-size: 16px !important; /* evita zoom iOS */
+  text-align: left !important;
+}
+
+body.question-open #mobile-controls {
+  opacity: 0.2;
+  pointer-events: none;
+}
