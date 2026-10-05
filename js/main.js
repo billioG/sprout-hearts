@@ -101,7 +101,8 @@ function preload() {
   this.load.spritesheet('plants', 'assets/tiles/Basic_Plants.png', { frameWidth: 16, frameHeight: 16 });
   this.load.spritesheet('things', 'assets/tiles/Grass_Things.png', { frameWidth: 16, frameHeight: 16 });
   this.load.spritesheet('dirt', 'assets/tiles/Tilled_Dirt.png', { frameWidth: 16, frameHeight: 16 });
-  this.load.image('house', 'assets/tiles/Wooden_House.png');
+  this.load.image('house', 'assets/tiles/house.png');
+  this.load.image('bush', 'assets/tiles/bush.png');
 
   this.load.spritesheet('char-male', 'assets/characters/lpc_male_walk.png', { frameWidth: 48, frameHeight: 64 });
   this.load.spritesheet('char-green', 'assets/characters/lpc_green_walk.png', { frameWidth: 48, frameHeight: 64 });
@@ -176,10 +177,13 @@ function create() {
     bushSpots.push([dx, dy]);
   }
   bushSpots.forEach(([dx, dy], i) => {
-    const key = i % 3 === 0 ? 'things' : 'plants';
-    const frame = i % 6;
-    this.add.image(dx * TILE + 16, dy * TILE + 16, key, frame)
-      .setDisplaySize(28, 28).setDepth(1);
+    if (i % 2 === 0) {
+      this.add.image(dx * TILE + 16, dy * TILE + 16, 'bush')
+        .setDisplaySize(28, 28).setDepth(1);
+    } else {
+      this.add.image(dx * TILE + 16, dy * TILE + 16, 'plants', i % 6)
+        .setDisplaySize(24, 24).setDepth(1);
+    }
   });
 
   // Houses
@@ -414,6 +418,10 @@ function startDialogue(level) {
   document.getElementById('dlg-prompt').classList.add('hidden');
   document.getElementById('dlg-partner').classList.add('hidden');
   document.getElementById('dlg-next').classList.remove('hidden');
+  // Liberar teclas A/S/D/W para poder escribir
+  if (game && game.scene && game.scene.scenes[0] && game.scene.scenes[0].input) {
+    game.scene.scenes[0].input.keyboard.enabled = false;
+  }
   sound.play('heart');
   showDialogueLine();
 }
@@ -465,6 +473,23 @@ function closeDialogue() {
   document.body.classList.remove('dialogue-open');
   document.getElementById('dialogue-box').classList.add('hidden');
   dlgLevel = null;
+  if (game && game.scene && game.scene.scenes[0] && game.scene.scenes[0].input) {
+    game.scene.scenes[0].input.keyboard.enabled = true;
+  }
+}
+
+function showPartnerToast(msg) {
+  let el = document.getElementById('partner-toast');
+  if (!el) {
+    el = document.createElement('div');
+    el.id = 'partner-toast';
+    el.className = 'partner-toast';
+    document.body.appendChild(el);
+  }
+  el.textContent = msg;
+  el.classList.add('show');
+  clearTimeout(el._t);
+  el._t = setTimeout(() => el.classList.remove('show'), 4500);
 }
 
 function getPartnerId() {
@@ -559,6 +584,10 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('hud-level').textContent = 'Nivel 1 / 22';
     document.getElementById('hud-pin').textContent = state.room ? 'PIN: ' + state.room.pin : '';
     document.getElementById('hud-partner').textContent = state.isHost ? 'Esperando pareja…' : 'Conectado';
+    if (state.room?.answers) state.answers = state.room.answers;
+    // Contar niveles respondidos
+    const answered = Object.keys(state.answers || {}).length;
+    document.getElementById('hud-level').textContent = 'Respondidos ' + answered + ' / 22';
 
     if (!game) game = new Phaser.Game(config);
     setTimeout(() => sound.startMusic(), 400);
@@ -566,7 +595,21 @@ document.addEventListener('DOMContentLoaded', () => {
     if (state.room && !state.room.offline) {
       subscribeToRoom(state.room.id, (updated) => {
         state.room = updated;
+        const prevAnswers = state.answers || {};
         state.answers = updated.answers || {};
+        // Aviso si la pareja respondió algo nuevo
+        const pid = state.isHost ? updated.player2_id : updated.player1_id;
+        if (pid && state.answers) {
+          for (const lid of Object.keys(state.answers)) {
+            const now = state.answers[lid]?.[pid];
+            const before = prevAnswers[lid]?.[pid];
+            if (now && (!before || now.timestamp !== before.timestamp)) {
+              showPartnerToast('💕 Tu pareja respondió el nivel ' + lid);
+              sound.play('partner');
+              break;
+            }
+          }
+        }
         if (updated.player2_id) {
           if (!state.partnerOnline) {
             document.getElementById('hud-partner').textContent = '¡Pareja conectada! 💕';
@@ -584,6 +627,8 @@ document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('dlg-next').addEventListener('click', nextDialogue);
   document.addEventListener('keydown', (e) => {
     if (!dialogueOpen) return;
+    // No interceptar si está escribiendo en el textarea
+    if (document.activeElement && document.activeElement.id === 'dlg-answer') return;
     if (e.key === 'Enter' || e.key === ' ') {
       const line = dlgLevel?.dialogue[dlgIndex];
       if (!(typeof line === 'object' && line.prompt)) {
@@ -598,7 +643,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (!answer) { sound.play('error'); return; }
     sound.play('send');
     if (state.room && dlgLevel) {
-      const na = await saveAnswer(state.room.id, dlgLevel.id, state.playerId, answer);
+      const na = await saveAnswer(state.room.id, dlgLevel.id, state.playerId, answer, state.room.pin);
       state.answers = na || state.answers;
     }
     document.getElementById('dlg-prompt').classList.add('hidden');
