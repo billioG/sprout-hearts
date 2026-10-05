@@ -20,7 +20,7 @@ const AVATARS = {
   'male-green':  { sheet: 'char-green',  prefix: 'g', female: false, tint: null },
   'male-gold':   { sheet: 'char-gold',   prefix: 'o', female: false, tint: null },
   'female-pink': { sheet: 'char-female', prefix: 'f', female: true,  tint: null },
-  'female-blue': { sheet: 'char-female', prefix: 'f', female: true,  tint: 0xa0c8ff },
+  'female-blue': { sheet: 'char-partner', prefix: 'p', female: true,  tint: null },
   'female-green':{ sheet: 'char-female', prefix: 'f', female: true,  tint: 0xa0e8a0 },
   'sprout':      { sheet: 'char-sprout', prefix: 's', female: false, tint: null }
 };
@@ -95,19 +95,19 @@ function isBlocked(x, y) {
 
 function preload() {
   this.load.spritesheet('grass', 'assets/tiles/grass_solid.png', { frameWidth: 16, frameHeight: 16 });
-  this.load.spritesheet('water', 'assets/tiles/Water.png', { frameWidth: 16, frameHeight: 16 });
-  this.load.spritesheet('paths', 'assets/tiles/Paths.png', { frameWidth: 16, frameHeight: 16 });
-  this.load.spritesheet('hills', 'assets/tiles/Hills.png', { frameWidth: 16, frameHeight: 16 });
-  this.load.spritesheet('plants', 'assets/tiles/Basic_Plants.png', { frameWidth: 16, frameHeight: 16 });
-  this.load.spritesheet('things', 'assets/tiles/Grass_Things.png', { frameWidth: 16, frameHeight: 16 });
-  this.load.spritesheet('dirt', 'assets/tiles/Tilled_Dirt.png', { frameWidth: 16, frameHeight: 16 });
-  this.load.image('house', 'assets/tiles/house.png');
+  this.load.image('path', 'assets/tiles/path_solid.png');
+  this.load.image('water', 'assets/tiles/water_solid.png');
   this.load.image('bush', 'assets/tiles/bush.png');
+  this.load.image('flower', 'assets/tiles/flower.png');
+  this.load.image('house', 'assets/tiles/house.png');
+  this.load.spritesheet('fence', 'assets/tiles/fence.png', { frameWidth: 16, frameHeight: 16 });
 
+  // Male 48x64, Female also 48x64 (from male base)
   this.load.spritesheet('char-male', 'assets/characters/lpc_male_walk.png', { frameWidth: 48, frameHeight: 64 });
   this.load.spritesheet('char-green', 'assets/characters/lpc_green_walk.png', { frameWidth: 48, frameHeight: 64 });
   this.load.spritesheet('char-gold', 'assets/characters/lpc_gold_walk.png', { frameWidth: 48, frameHeight: 64 });
-  this.load.spritesheet('char-female', 'assets/characters/lpc_female_walk3.png', { frameWidth: 64, frameHeight: 64 });
+  this.load.spritesheet('char-female', 'assets/characters/lpc_female_walk3.png', { frameWidth: 48, frameHeight: 64 });
+  this.load.spritesheet('char-partner', 'assets/characters/lpc_partner_walk.png', { frameWidth: 48, frameHeight: 64 });
   this.load.spritesheet('char-sprout', 'assets/characters/Basic_Character.png', { frameWidth: 48, frameHeight: 48 });
 
   const g = this.make.graphics({ x: 0, y: 0, add: false });
@@ -144,61 +144,72 @@ function createAnims(scene, sheet, prefix, swapLR = true) {
 }
 
 function create() {
-  // Solid grass only
+  // === Mapa estilo Zelda: hierba limpia, caminos de tierra, casas, setos ===
   for (let y = 0; y < MAP_H; y++) {
     for (let x = 0; x < MAP_W; x++) {
       const px = x * TILE + 16, py = y * TILE + 16;
       if (isWater(x, y)) {
-        this.add.image(px, py, 'water', 0).setDisplaySize(TILE, TILE);
+        this.add.image(px, py, 'water').setDisplaySize(TILE, TILE);
       } else if (isPath(x, y)) {
-        this.add.image(px, py, 'paths', 0).setDisplaySize(TILE, TILE);
+        this.add.image(px, py, 'path').setDisplaySize(TILE, TILE);
       } else if (isHill(x, y)) {
         this.add.image(px, py, 'grass', (x + y) % 4).setDisplaySize(TILE, TILE);
-        this.add.image(px, py - 2, 'hills', 0).setDisplaySize(TILE, TILE).setDepth(2);
+        // dark edge for hills
+        this.add.rectangle(px, py, TILE, TILE, 0x000000, 0.15).setDepth(1);
       } else {
-        this.add.image(px, py, 'grass', (x * 3 + y) % 4).setDisplaySize(TILE, TILE);
+        this.add.image(px, py, 'grass', (x * 5 + y * 3) % 4).setDisplaySize(TILE, TILE);
       }
     }
   }
 
-  // Dirt gardens
-  [[4,14,9,16],[40,28,45,30]].forEach(([x1,y1,x2,y2]) => {
-    for (let y = y1; y <= y2; y++)
-      for (let x = x1; x <= x2; x++)
-        if (!isWater(x,y)) this.add.image(x*TILE+16, y*TILE+16, 'dirt', 0).setDisplaySize(TILE, TILE);
-  });
-
-  // Bushes / plants as single frames
-  const bushSpots = [];
-  for (let i = 0; i < 70; i++) {
-    const dx = 3 + Math.floor(Math.random() * (MAP_W - 6));
-    const dy = 3 + Math.floor(Math.random() * (MAP_H - 6));
-    if (isWater(dx,dy) || isPath(dx,dy) || isHill(dx,dy)) continue;
-    bushSpots.push([dx, dy]);
-  }
-  bushSpots.forEach(([dx, dy], i) => {
-    if (i % 2 === 0) {
-      this.add.image(dx * TILE + 16, dy * TILE + 16, 'bush')
-        .setDisplaySize(28, 28).setDepth(1);
-    } else {
-      this.add.image(dx * TILE + 16, dy * TILE + 16, 'plants', i % 6)
-        .setDisplaySize(24, 24).setDepth(1);
-    }
-  });
-
-  // Houses
-  const houses = [[7, 5], [40, 6], [8, 30], [42, 28], [30, 20]];
+  // Casas estilo Zelda + vallas
+  const houses = [
+    [6, 5], [42, 4], [7, 28], [43, 27], [32, 19], [18, 33]
+  ];
   houses.forEach(([hx, hy]) => {
-    if (!isWater(hx, hy)) {
-      this.add.image(hx * TILE + 16, hy * TILE + 8, 'house')
-        .setDisplaySize(64, 48).setDepth(4);
+    if (isWater(hx, hy)) return;
+    this.add.image(hx * TILE + 16, hy * TILE + 8, 'house')
+      .setDisplaySize(56, 48).setDepth(4);
+    // valla frente a la casa
+    for (let fx = hx - 1; fx <= hx + 1; fx++) {
+      this.add.image(fx * TILE + 16, (hy + 2) * TILE + 16, 'fence', 0)
+        .setDisplaySize(TILE, TILE).setDepth(3);
     }
   });
 
-  createAnims(this, 'char-male', 'm', true);
+  // Arbustos en grupos (como Zelda)
+  const bushClusters = [
+    [4, 8], [5, 8], [4, 9],
+    [20, 5], [21, 5], [20, 6],
+    [36, 8], [37, 8], [38, 9],
+    [10, 20], [11, 20], [10, 21],
+    [30, 28], [31, 28], [32, 28], [30, 29],
+    [44, 20], [45, 20], [44, 21],
+    [14, 34], [15, 34], [16, 35],
+    [3, 15], [3, 16],
+    [46, 14], [47, 14]
+  ];
+  bushClusters.forEach(([bx, by]) => {
+    if (!isWater(bx, by) && !isPath(bx, by)) {
+      this.add.image(bx * TILE + 16, by * TILE + 16, 'bush')
+        .setDisplaySize(30, 30).setDepth(2);
+    }
+  });
+
+  // Flores dispersas
+  for (let i = 0; i < 50; i++) {
+    const fx = 2 + Math.floor(Math.random() * (MAP_W - 4));
+    const fy = 2 + Math.floor(Math.random() * (MAP_H - 4));
+    if (isWater(fx, fy) || isPath(fx, fy) || isHill(fx, fy)) continue;
+    this.add.image(fx * TILE + 16, fy * TILE + 16, 'flower')
+      .setDisplaySize(16, 16).setDepth(1);
+  }
+
+    createAnims(this, 'char-male', 'm', true);
   createAnims(this, 'char-green', 'g', true);
   createAnims(this, 'char-gold', 'o', true);
   createAnims(this, 'char-female', 'f', true);
+  createAnims(this, 'char-partner', 'p', true);
   // sprout
   ['down','up','left','right'].forEach((dir, i) => {
     const start = i * 4;
@@ -209,7 +220,7 @@ function create() {
   const av = AVATARS[state.avatar] || AVATARS['male-blue'];
   const sx = 25 * TILE + 16, sy = 12 * TILE + 16;
   player = this.physics.add.sprite(sx, sy, av.sheet, 7);
-  player.setScale(av.female ? 1.4 : (av.sheet === 'char-sprout' ? 1.8 : 1.5));
+  player.setScale(av.sheet === 'char-sprout' ? 1.8 : 1.5);
   if (av.tint) player.setTint(av.tint);
   player.setCollideWorldBounds(true);
   player.body.setSize(14, 18);
@@ -218,7 +229,7 @@ function create() {
   player.setDepth(10);
 
   partner = this.physics.add.sprite(sx + 48, sy, 'char-female', 7);
-  partner.setScale(1.4).setDepth(9).setVisible(false);
+  partner.setScale(1.5).setDepth(9).setVisible(false);
   partner.animPrefix = 'f';
   partnerLabel = this.add.text(0, 0, '', {
     fontFamily: '"Press Start 2P"', fontSize: '7px', color: '#ff8fab',
@@ -314,7 +325,7 @@ function showPartnerFromRoom(room) {
   const av = AVATARS[otherAvId] || AVATARS['female-pink'];
   partner.setTexture(av.sheet, 7);
   partner.animPrefix = av.prefix;
-  partner.setScale(av.female ? 1.4 : (av.sheet === 'char-sprout' ? 1.8 : 1.5));
+  partner.setScale(av.sheet === 'char-sprout' ? 1.8 : 1.5);
   if (av.tint) partner.setTint(av.tint); else partner.clearTint();
   partnerTarget = { x: ox * TILE + 16, y: oy * TILE + 16 };
   partner.setVisible(true);
