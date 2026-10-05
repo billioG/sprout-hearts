@@ -6,7 +6,7 @@
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="theme-color" content="#1a1c2c" />
   <title>Sprout Hearts</title>
-  <link rel="stylesheet" href="css/style.css?v=7" />
+  <link rel="stylesheet" href="css/style.css?v=8" />
   <script src="https://cdn.jsdelivr.net/npm/phaser@3.80.1/dist/phaser.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
@@ -29,9 +29,11 @@
         <div id="pin-create" class="hidden">
           <p>Tu PIN es:</p>
           <div id="generated-pin" class="pin-display">------</div>
+          <button type="button" id="btn-copy-pin" class="pixel-btn secondary" style="font-size:0.45rem;margin-top:6px;">Copiar PIN</button>
           <p class="hint">Compártelo y guárdalo: con el mismo PIN se reanuda el progreso</p>
           <button id="btn-start-create" class="pixel-btn">Elegir avatar</button>
         </div>
+        <div id="recent-pins" class="hidden" style="margin:10px 0;"></div>
         <div id="pin-join" class="hidden">
           <input type="text" id="input-pin" maxlength="6" inputmode="numeric" placeholder="PIN 6 dígitos" class="pixel-input" />
           <button id="btn-join-confirm" class="pixel-btn">Continuar</button>
@@ -94,6 +96,6 @@
   </div>
 
   <div id="game-container"></div>
-  <script type="module" src="js/main.js?v=7"></script>
+  <script type="module" src="js/main.js?v=8"></script>
 </body>
 </html>

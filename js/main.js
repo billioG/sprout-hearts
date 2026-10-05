@@ -1,9 +1,9 @@
 import { LEVELS } from './levels.js';
-import { createRoom, joinRoom, saveAnswer, subscribeToRoom, updatePosition } from './supabase.js';
+import { createRoom, joinRoom, saveAnswer, subscribeToRoom, updatePosition, getStablePlayerId, getLastPin, getRecentPins, rememberPin } from './supabase.js';
 import { sound } from './sound.js';
 
 const state = {
-  playerId: 'p' + Math.random().toString(36).substr(2, 9),
+  playerId: null, // set on DOMContentLoaded
   playerName: 'Jugador',
   avatar: 'male-blue',
   room: null,
@@ -100,6 +100,7 @@ function preload() {
   this.load.image('bush', 'assets/tiles/bush.png');
   this.load.image('flower', 'assets/tiles/flower.png');
   this.load.image('house', 'assets/tiles/house.png');
+  this.load.image('house2', 'assets/tiles/house2.png');
   this.load.spritesheet('fence', 'assets/tiles/fence.png', { frameWidth: 16, frameHeight: 16 });
 
   // Male 48x64, Female also 48x64 (from male base)
@@ -166,10 +167,11 @@ function create() {
   const houses = [
     [6, 5], [42, 4], [7, 28], [43, 27], [32, 19], [18, 33]
   ];
-  houses.forEach(([hx, hy]) => {
+  houses.forEach(([hx, hy], hi) => {
     if (isWater(hx, hy)) return;
-    this.add.image(hx * TILE + 16, hy * TILE + 8, 'house')
-      .setDisplaySize(56, 48).setDepth(4);
+    const key = hi % 2 === 0 ? 'house' : 'house2';
+    this.add.image(hx * TILE + 16, hy * TILE + 4, key)
+      .setDisplaySize(64, 56).setDepth(4);
     // valla frente a la casa
     for (let fx = hx - 1; fx <= hx + 1; fx++) {
       this.add.image(fx * TILE + 16, (hy + 2) * TILE + 16, 'fence', 0)
@@ -532,7 +534,29 @@ function setupMobileControls() {
 }
 
 document.addEventListener('DOMContentLoaded', () => {
+  state.playerId = getStablePlayerId();
   setupMobileControls();
+  // Mostrar PINs recientes
+  const recent = getRecentPins();
+  const last = getLastPin();
+  if (last) {
+    const input = document.getElementById('input-pin');
+    if (input) input.placeholder = 'Último: ' + last;
+  }
+  const listEl = document.getElementById('recent-pins');
+  if (listEl && recent.length) {
+    listEl.innerHTML = '<p class="hint">PINs recientes (toca para usar):</p>' +
+      recent.map(p => '<button type="button" class="pin-chip" data-pin="'+p+'">'+p+'</button>').join(' ');
+    listEl.classList.remove('hidden');
+    listEl.querySelectorAll('.pin-chip').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.getElementById('input-pin').value = btn.dataset.pin;
+        document.getElementById('pin-join').classList.remove('hidden');
+        document.getElementById('pin-create').classList.add('hidden');
+      });
+    });
+  }
+
 
   document.querySelectorAll('.avatar-option').forEach(opt => {
     opt.addEventListener('click', () => {
@@ -560,6 +584,15 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('generated-pin').textContent = state._tempPin;
   });
 
+  document.getElementById('btn-copy-pin')?.addEventListener('click', () => {
+    const pin = document.getElementById('generated-pin').textContent;
+    if (pin && pin !== '------') {
+      navigator.clipboard?.writeText(pin);
+      sound.play('ui');
+      alert('PIN copiado: ' + pin + '\n\nGuárdalo para volver a entrar.');
+    }
+  });
+
   document.getElementById('btn-start-create').addEventListener('click', () => {
     state.isHost = true;
     showScreen('screen-customize');
@@ -584,11 +617,11 @@ document.addEventListener('DOMContentLoaded', () => {
     try {
       if (state._pendingPin) {
         state.room = await joinRoom(state._pendingPin, state.playerId, state.playerName, state.avatar);
-        state.isHost = false;
       } else {
         state.room = await createRoom(state.playerId, state.playerName, state.avatar, state._tempPin);
-        state.isHost = true;
       }
+      state.isHost = (state.room._role === 'host') || (state.room.player1_id === state.playerId);
+      if (state.room.pin) rememberPin(state.room.pin);
     } catch (e) { console.error(e); }
 
     hideAllScreens();
